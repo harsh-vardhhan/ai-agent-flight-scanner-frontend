@@ -56,12 +56,18 @@ const App = () => {
 
         <Box w="full" bg="white" p={6} boxShadow="md" borderRadius="md">
           <Input
+            as="textarea"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="Ask about flights"
             size="lg"
             mb={4}
             variant="filled"
+            resize="none"
+            rows={4}
+            overflow="hidden"
+            whiteSpace="pre-wrap"
+            style={{ height: "auto" }}
           />
           <Button
             isLoading={loading}
@@ -79,9 +85,12 @@ const App = () => {
             <Heading as="h3" size="md" mb={4}>
               Answer:
             </Heading>
-            <ReactMarkdown children={answer} remarkPlugins={[remarkGfm]} />
+            <Box overflowX="auto" scrollBehavior="smooth">
+              <ReactMarkdown children={answer} remarkPlugins={[remarkGfm]} />
+            </Box>
           </Box>
         )}
+
       </VStack>
 
       <style jsx global>{`
