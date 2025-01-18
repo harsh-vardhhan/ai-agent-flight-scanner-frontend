@@ -4,4 +4,4 @@
 
 ## RAG on Google Flights Data - Backend End
 
-[https://github.com/harsh-vardhhan/query-google-flights](https://github.com/harsh-vardhhan/query-google-flights)
+[https://github.com/harsh-vardhhan/ai-agent-flight-scanner](https://github.com/harsh-vardhhan/ai-agent-flight-scanner)
