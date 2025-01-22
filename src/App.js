@@ -1,6 +1,16 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Button, Input, useToast, Box, Heading, VStack, Container, Text } from "@chakra-ui/react";
+import {
+  Button,
+  Input,
+  useToast,
+  Box,
+  Heading,
+  VStack,
+  Container,
+  Text,
+  Stack,
+} from "@chakra-ui/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm"; // For support of tables and other GitHub Flavored Markdown
 
@@ -10,8 +20,19 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
-  const handleSubmit = async () => {
-    if (!question.trim()) {
+  // Predefined prompts
+  const prompts = [
+    "What is the cheapest flight from New Delhi to Hanoi?",
+    "Find the cheapest round trip from New Delhi to Hanoi?",
+    "Find the cheapest return flight between New Delhi and Hanoi with at least 7 days gap?",
+    "List round trip flights between Mumbai and Phu Quoc?",
+    "Show me flights from Paris to Berlin under $100.",
+  ];
+
+  const handleSubmit = async (query) => {
+    const currentQuestion = query || question;
+
+    if (!currentQuestion.trim()) {
       toast({
         title: "Please enter a question",
         status: "warning",
@@ -24,7 +45,7 @@ const App = () => {
     setLoading(true);
     try {
       const response = await axios.post("http://localhost:8000/query", {
-        question,
+        question: currentQuestion,
       });
 
       // Use the final_response field from the backend
@@ -54,6 +75,7 @@ const App = () => {
           </Text>
         </Box>
 
+        {/* Question Input Section */}
         <Box w="full" bg="white" p={6} boxShadow="md" borderRadius="md">
           <Input
             as="textarea"
@@ -73,13 +95,14 @@ const App = () => {
             isLoading={loading}
             loadingText="Searching"
             colorScheme="blue"
-            onClick={handleSubmit}
+            onClick={() => handleSubmit()}
             w="full"
           >
             Submit
           </Button>
         </Box>
 
+        {/* Answer Section */}
         {answer && (
           <Box w="full" p={6} bg="white" boxShadow="md" borderRadius="md">
             <Heading as="h3" size="md" mb={4}>
@@ -90,6 +113,32 @@ const App = () => {
             </Box>
           </Box>
         )}
+
+        {/* Predefined Prompts Section */}
+        <Box w="full" bg="white" p={6} boxShadow="md" borderRadius="md">
+          <Heading as="h3" size="md" mb={4}>
+            Predefined Prompts:
+          </Heading>
+          <Stack spacing={3}>
+            {prompts.map((prompt, index) => (
+              <Button
+                key={index}
+                colorScheme="teal"
+                variant="outline"
+                w="full"
+                textAlign="left"
+                whiteSpace="normal" // Ensures text wraps within the button
+                wordBreak="break-word" // Breaks text at word boundaries if too long
+                onClick={() => {
+                  setQuestion(prompt);
+                  handleSubmit(prompt);
+                }}
+              >
+                {prompt}
+              </Button>
+            ))}
+          </Stack>
+        </Box>
 
       </VStack>
     </Container>
