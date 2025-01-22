@@ -92,26 +92,6 @@ const App = () => {
         )}
 
       </VStack>
-
-      <style jsx global>{`
-        /* Style tables */
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 16px;
-          margin-bottom: 16px;
-        }
-
-        th, td {
-          border: 1px solid #ddd; /* Light gray border */
-          padding: 8px;
-          text-align: left;
-        }
-
-        th {
-          background-color: #f4f4f4; /* Light gray background for headers */
-        }
-      `}</style>
     </Container>
   );
 };
