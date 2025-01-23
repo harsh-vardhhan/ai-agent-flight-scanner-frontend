@@ -26,7 +26,6 @@ const App = () => {
     "Find the cheapest round trip from New Delhi to Hanoi?",
     "Find the cheapest return flight between New Delhi and Hanoi with at least 7 days gap?",
     "List round trip flights between Mumbai and Phu Quoc?",
-    "Show me flights from Paris to Berlin under $100.",
   ];
 
   const handleSubmit = async (query) => {
