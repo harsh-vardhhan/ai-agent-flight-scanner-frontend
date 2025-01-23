@@ -12,11 +12,15 @@ import {
   Stack,
 } from "@chakra-ui/react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm"; // For support of tables and other GitHub Flavored Markdown
+import remarkGfm from "remark-gfm"; // For tables and GitHub Flavored Markdown
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism"; // Dark theme for code blocks
+import { format } from "sql-formatter";
 
 const App = () => {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
+  const [sqlQuery, setSqlQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
@@ -47,8 +51,15 @@ const App = () => {
         question: currentQuestion,
       });
 
-      // Use the final_response field from the backend
+      // Use the final_response and sql_query fields from the backend
       setAnswer(response.data.final_response || "No answer found.");
+      const rawSqlQuery = response.data.sql_query || "SQL query not provided.";
+
+      const formattedSqlQuery = format(rawSqlQuery, {
+        language: "mysql", // Change this to match your SQL dialect if needed
+        indent: "  ",      // Optional: Adjust the indentation (default is 2 spaces)
+      });
+      setSqlQuery(formattedSqlQuery);
     } catch (error) {
       toast({
         title: "Error querying the API",
@@ -113,6 +124,20 @@ const App = () => {
           </Box>
         )}
 
+        {/* SQL Query Section */}
+        {sqlQuery && (
+          <Box w="full" p={6} bg="white" boxShadow="md" borderRadius="md">
+            <Heading as="h3" size="md" mb={4}>
+              SQL Query:
+            </Heading>
+            <Box overflowX="auto">
+              <SyntaxHighlighter language="sql" style={atomDark}>
+                {sqlQuery}
+              </SyntaxHighlighter>
+            </Box>
+          </Box>
+        )}
+
         {/* Predefined Prompts Section */}
         <Box w="full" bg="white" p={6} boxShadow="md" borderRadius="md">
           <Heading as="h3" size="md" mb={4}>
@@ -138,7 +163,6 @@ const App = () => {
             ))}
           </Stack>
         </Box>
-
       </VStack>
     </Container>
   );
