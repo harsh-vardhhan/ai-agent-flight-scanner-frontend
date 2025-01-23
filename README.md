@@ -1,6 +1,7 @@
 ## RAG on Google Flights Data - Front End
 
-<img width="524" alt="RAG-FE" src="https://github.com/user-attachments/assets/6b746a99-ff5b-48b9-b072-5535eaefd0e1" />
+![demo](https://github.com/user-attachments/assets/2567bd74-c225-4805-b677-3915c8ac050a)
+
 
 ## RAG on Google Flights Data - Backend End
 
