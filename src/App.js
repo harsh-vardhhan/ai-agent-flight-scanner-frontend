@@ -93,10 +93,10 @@ const App = () => {
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="Ask about flights"
             size="lg"
-            mb={4}
+            mb={2}
             variant="filled"
             resize="none"
-            rows={4}
+            rows={2}
             overflow="hidden"
             whiteSpace="pre-wrap"
             style={{ height: "auto" }}
@@ -114,7 +114,7 @@ const App = () => {
 
         {/* Answer Section */}
         {answer && (
-          <Box w="full" p={6} bg="white" boxShadow="md" borderRadius="md">
+          <Box w="100vw" p={6} bg="white" boxShadow="md" borderRadius="md">
             <Heading as="h3" size="md" mb={4}>
               Answer:
             </Heading>
@@ -126,7 +126,7 @@ const App = () => {
 
         {/* SQL Query Section */}
         {sqlQuery && (
-          <Box w="full" p={6} bg="white" boxShadow="md" borderRadius="md">
+          <Box w="100vw" p={6} bg="white" boxShadow="md" borderRadius="md">
             <Heading as="h3" size="md" mb={4}>
               SQL Query:
             </Heading>
