@@ -114,12 +114,6 @@ const App = () => {
         console.error('EventSource error:', error);
         eventSource.close();
         setLoading(false);
-        toast({
-          title: "Error in streaming response",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
       };
 
       eventSource.addEventListener('done', () => {
