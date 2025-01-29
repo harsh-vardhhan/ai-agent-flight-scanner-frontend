@@ -34,20 +34,20 @@ const App = () => {
   const processText = (text) => {
     // Remove think tags and their content
     text = text.replace(/<think>[\s\S]*?<\/think>/g, '');
-    
+
     // Add space after punctuation marks if not followed by a space
     text = text.replace(/([.,!?)])([^\s])/g, '$1 $2');
-    
+
     // Add space before opening parenthesis if not preceded by a space
     text = text.replace(/([^\s])\(/g, '$1 (');
-    
+
     // Ensure proper spacing in markdown tables
     text = text.replace(/\|([^\s|])/g, '| $1');
     text = text.replace(/([^\s|])\|/g, '$1 |');
-    
+
     // Fix markdown headers spacing
     text = text.replace(/###([^\s])/g, '### $1');
-    
+
     // Ensure proper spacing for bold text
     text = text.replace(/\*\*([^\s])/g, '** $1');
     text = text.replace(/([^\s])\*\*/g, '$1 **');
@@ -77,18 +77,18 @@ const App = () => {
     setLoading(true);
     setAnswer("");
     setSqlQuery("");
-    
+
     try {
       const eventSource = new EventSource(`http://localhost:8000/stream?question=${encodeURIComponent(currentQuestion)}`);
       let currentAnswer = "";
-      
+
       eventSource.onmessage = (event) => {
         try {
           const cleanData = event.data.replace(/^data:\s*/, '');
           if (!cleanData) return;
 
           const data = JSON.parse(cleanData);
-          
+
           if (data.type === 'answer') {
             currentAnswer += data.content;
             const processedText = processText(currentAnswer);
@@ -177,45 +177,43 @@ const App = () => {
             <Heading as="h3" size="md" mb={4}>
               Answer:
             </Heading>
-            <Box 
+            <Box
               ref={answerRef}
-              overflowX="auto" 
               className="markdown-body"
               css={{
                 '& table': {
-                  width: '100%',
+                  width: '100%', // Table will occupy full width of container
                   borderCollapse: 'collapse',
                   marginBottom: '1rem',
-                  tableLayout: 'fixed'
                 },
                 '& th, & td': {
                   border: '1px solid #ddd',
                   padding: '8px',
                   textAlign: 'left',
-                  wordWrap: 'break-word'
+                  wordWrap: 'break-word',
                 },
                 '& th': {
-                  backgroundColor: '#f5f5f5'
+                  backgroundColor: '#f5f5f5',
                 },
                 '& h3': {
                   marginTop: '1rem',
-                  marginBottom: '0.5rem'
+                  marginBottom: '0.5rem',
                 },
                 '& p': {
                   marginBottom: '1rem',
-                  lineHeight: '1.5'
-                }
+                  lineHeight: '1.5',
+                },
               }}
             >
-              <ReactMarkdown 
-                children={answer || "Generating response..."} 
+              <ReactMarkdown
+                children={answer || "Generating response..."}
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  table: ({node, ...props}) => (
-                    <div style={{overflowX: 'auto', width: '100%'}}>
+                  table: ({ node, ...props }) => (
+                    <div style={{ overflowX: 'auto', width: '100%' }}>
                       <table {...props} />
                     </div>
-                  )
+                  ),
                 }}
               />
             </Box>
