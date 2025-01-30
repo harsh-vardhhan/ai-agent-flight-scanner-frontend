@@ -21,8 +21,10 @@ const App = () => {
   const [answer, setAnswer] = useState("");
   const [sqlQuery, setSqlQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streamingSql, setStreamingSql] = useState(false);
   const toast = useToast();
   const answerRef = useRef(null);
+  const sqlRef = useRef(null);
 
   const prompts = [
     "What is the cheapest flight from New Delhi to Hanoi?",
@@ -55,6 +57,20 @@ const App = () => {
     return text;
   };
 
+  const processSqlChunk = (chunk) => {
+    try {
+      // Accumulate SQL chunks and format only when they form complete statements
+      const formattedSql = format(chunk, {
+        language: "mysql",
+        indent: "  ",
+      });
+      return formattedSql;
+    } catch (sqlError) {
+      // If formatting fails, return the raw chunk
+      return chunk;
+    }
+  };
+
   useEffect(() => {
     if (answerRef.current && loading) {
       answerRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -75,12 +91,14 @@ const App = () => {
     }
 
     setLoading(true);
+    setStreamingSql(true);
     setAnswer("");
     setSqlQuery("");
 
     try {
       const eventSource = new EventSource(`http://localhost:8000/stream?question=${encodeURIComponent(currentQuestion)}`);
       let currentAnswer = "";
+      let currentSql = "";
 
       eventSource.onmessage = (event) => {
         try {
@@ -94,16 +112,9 @@ const App = () => {
             const processedText = processText(currentAnswer);
             setAnswer(processedText);
           } else if (data.type === 'sql') {
-            try {
-              const formattedSql = format(data.content, {
-                language: "mysql",
-                indent: "  ",
-              });
-              setSqlQuery(formattedSql);
-            } catch (sqlError) {
-              console.error('SQL formatting error:', sqlError);
-              setSqlQuery(data.content);
-            }
+            currentSql += data.content;
+            const processedSql = processSqlChunk(currentSql);
+            setSqlQuery(processedSql);
           }
         } catch (parseError) {
           console.error('Parse error:', parseError, 'Raw data:', event.data);
@@ -220,14 +231,31 @@ const App = () => {
           </Box>
         )}
 
-        {(sqlQuery || loading) && (
-          <Box w="full" p={6} bg="white" boxShadow="md" borderRadius="md">
+        {(sqlQuery || streamingSql) && (
+          <Box
+            w="full"
+            p={6}
+            bg="white"
+            boxShadow="md"
+            borderRadius="md"
+            ref={sqlRef}
+          >
             <Heading as="h3" size="md" mb={4}>
               SQL Query:
+              {streamingSql && (
+                <Text as="span" fontSize="sm" color="gray.500" ml={2}>
+                  (Generating...)
+                </Text>
+              )}
             </Heading>
             <Box overflowX="auto">
-              <SyntaxHighlighter language="sql" style={atomDark}>
-                {sqlQuery || "Generating query..."}
+              <SyntaxHighlighter
+                language="sql"
+                style={atomDark}
+                wrapLines={true}
+                wrapLongLines={true}
+              >
+                {sqlQuery || ""}
               </SyntaxHighlighter>
             </Box>
           </Box>
