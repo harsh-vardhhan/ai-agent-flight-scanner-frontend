@@ -146,7 +146,7 @@ const App = () => {
   };
 
   return (
-    <Container maxW="container.md" mt={8}>
+    <Container maxW="container.lg" mt={8}>
       <VStack spacing={6}>
         <Box w="full">
           <Heading as="h1" size="xl" textAlign="center" mb={4}>
