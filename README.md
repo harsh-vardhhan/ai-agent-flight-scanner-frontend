@@ -1,7 +1,6 @@
 ## RAG on Google Flights Data - Front End
 
-
-![stream answer](https://github.com/user-attachments/assets/dba992dc-76f6-4c96-b109-68650056ae7d)
+![demo](https://github.com/user-attachments/assets/8c1e0483-758c-4914-a3f0-0203217d4535)
 
 
 ## RAG on Google Flights Data - Backend End
