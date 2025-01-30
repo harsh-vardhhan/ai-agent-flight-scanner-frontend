@@ -47,14 +47,7 @@ const App = () => {
     text = text.replace(/\|([^\s|])/g, '| $1');
     text = text.replace(/([^\s|])\|/g, '$1 |');
 
-    // Fix markdown headers spacing
-    text = text.replace(/###([^\s])/g, '### $1');
-
-    // Ensure proper spacing for bold text
-    text = text.replace(/\*\*([^\s])/g, '** $1');
-    text = text.replace(/([^\s])\*\*/g, '$1 **');
-
-    return text;
+    return text.trim(); // Trim extra spaces
   };
 
   const processSqlChunk = (chunk) => {
