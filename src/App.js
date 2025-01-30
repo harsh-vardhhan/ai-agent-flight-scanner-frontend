@@ -201,7 +201,9 @@ const App = () => {
                   border: '1px solid #ddd',
                   padding: '8px',
                   textAlign: 'left',
-                  wordWrap: 'break-word',
+                  whiteSpace: 'nowrap', // Prevents text from wrapping inside cells
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis', // Adds ellipsis if content is too long
                 },
                 '& th': {
                   backgroundColor: '#f5f5f5',
