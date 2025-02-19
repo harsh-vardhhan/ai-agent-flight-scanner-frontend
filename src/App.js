@@ -27,7 +27,7 @@ const App = () => {
   const sqlRef = useRef(null);
 
   const prompts = [
-    "What is the cheapest flight from New Delhi to Hanoi?",
+    "What is the cheapest flight from New Delhi to Hanoi and how much luggage is allowed?",
     "Find the cheapest round trip from New Delhi to Hanoi?",
     "Find the cheapest return flight between New Delhi and Hanoi with at least 7 days gap?",
     "List round trip flights between Mumbai and Phu Quoc?",
