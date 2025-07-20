@@ -6,85 +6,73 @@ import {
   Box,
   Heading,
   VStack,
-  Container,
   Text,
   Stack,
+  Link,
+  Spinner,
+  Card,
+  CardBody,
+  Flex,
+  IconButton,
+  Wrap,
+  WrapItem,
+  SkeletonText,
+  Divider,
 } from "@chakra-ui/react";
+import { SearchIcon } from "@chakra-ui/icons";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { format } from "sql-formatter";
 
+// --- Skeleton Loader Component ---
+const ResultSkeleton = () => (
+    <VStack spacing={4} align="stretch">
+        <Card variant="outline"><CardBody><SkeletonText noOfLines={5} spacing="4" skeletonHeight="3" /></CardBody></Card>
+        <Card variant="outline"><CardBody><SkeletonText noOfLines={5} spacing="4" skeletonHeight="3" /></CardBody></Card>
+    </VStack>
+);
+
+// --- Main Application Component ---
 const App = () => {
+  // State Management
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [sqlQuery, setSqlQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [streamingSql, setStreamingSql] = useState(false);
   const toast = useToast();
-  const answerRef = useRef(null);
-  const sqlRef = useRef(null);
+  const resultsContainerRef = useRef(null);
 
   const prompts = [
-    "What is the cheapest flight from New Delhi to Hanoi and how much luggage is allowed?",
-    "Find the cheapest round trip from New Delhi to Hanoi?",
-    "Find the cheapest return flight between New Delhi and Hanoi with at least 7 days gap?",
-    "List round trip flights between Mumbai and Phu Quoc?",
+    "Cheapest flight from Delhi to Hanoi?",
+    "Round trip from Mumbai to HCMC.",
+    "Direct flights from Bangalore?",
+    "Flights from Ahmedabad with free meal?",
   ];
-
-  const processText = (text) => {
-    // Remove think tags and their content
-    text = text.replace(/<think>[\s\S]*?<\/think>/g, '');
-
-    // Add space after punctuation marks if not followed by a space
-    text = text.replace(/([.,!?)])([^\s])/g, '$1 $2');
-
-    // Add space before opening parenthesis if not preceded by a space
-    text = text.replace(/([^\s])\(/g, '$1 (');
-
-    // Ensure proper spacing in markdown tables
-    text = text.replace(/\|([^\s|])/g, '| $1');
-    text = text.replace(/([^\s|])\|/g, '$1 |');
-
-    return text.trim(); // Trim extra spaces
-  };
 
   const processSqlChunk = (chunk) => {
     try {
-      // Accumulate SQL chunks and format only when they form complete statements
-      const formattedSql = format(chunk, {
-        language: "mysql",
-        indent: "  ",
-      });
-      return formattedSql;
+      return format(chunk, { language: "mysql", indent: "  " });
     } catch (sqlError) {
-      // If formatting fails, return the raw chunk
       return chunk;
     }
   };
 
   useEffect(() => {
-    if (answerRef.current && loading) {
-      answerRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    if (answer && resultsContainerRef.current) {
+      resultsContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-  }, [answer, loading]);
+  }, [answer]);
 
   const handleSubmit = async (query) => {
     const currentQuestion = query || question;
-
     if (!currentQuestion.trim()) {
-      toast({
-        title: "Please enter a question",
-        status: "warning",
-        duration: 2000,
-        isClosable: true,
-      });
+      toast({ title: "Please enter a search query.", status: "warning", duration: 2000, isClosable: true, position: "top" });
       return;
     }
 
     setLoading(true);
-    setStreamingSql(true);
     setAnswer("");
     setSqlQuery("");
 
@@ -97,17 +85,13 @@ const App = () => {
         try {
           const cleanData = event.data.replace(/^data:\s*/, '');
           if (!cleanData) return;
-
           const data = JSON.parse(cleanData);
-
           if (data.type === 'answer') {
             currentAnswer += data.content;
-            const processedText = processText(currentAnswer);
-            setAnswer(processedText);
+            setAnswer(currentAnswer); 
           } else if (data.type === 'sql') {
             currentSql += data.content;
-            const processedSql = processSqlChunk(currentSql);
-            setSqlQuery(processedSql);
+            setSqlQuery(processSqlChunk(currentSql));
           }
         } catch (parseError) {
           console.error('Parse error:', parseError, 'Raw data:', event.data);
@@ -127,161 +111,148 @@ const App = () => {
 
     } catch (error) {
       console.error('Connection error:', error);
-      toast({
-        title: "Error querying the API",
-        description: error.message,
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+      toast({ title: "Connection Error", description: "Could not connect to the server.", status: "error", duration: 5000, isClosable: true, position: "top" });
       setLoading(false);
     }
   };
+  
+  // --- NEW: Smartly render the response ---
+  const renderResponse = () => {
+    if (loading && !answer) {
+        return <ResultSkeleton />;
+    }
+
+    if (!answer) {
+        return null;
+    }
+
+    // Split the response into parts based on the '---' separator
+    const parts = answer.split('---').filter(part => part.trim());
+    
+    // Find the main title (e.g., "### Flight Options")
+    const titlePart = parts.find(p => p.trim().startsWith('#'));
+    // Isolate the flight cards
+    const flightParts = parts.filter(p => p.includes('✈️'));
+    // Isolate the summary
+    const summaryPart = parts.find(p => p.includes('**Summary:**'));
+
+    return (
+        <VStack spacing={4} align="stretch">
+            {titlePart && <Heading as="h3" size="md" color="gray.700" px={1}>{titlePart.replace(/#/g, '').trim()}</Heading>}
+            
+            {flightParts.map((flightMarkdown, index) => (
+                <Card key={index} variant="outline" size="sm">
+                    <CardBody>
+                        <ReactMarkdown
+                            children={flightMarkdown}
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                                p: ({node, ...props}) => <Text as="div" {...props} />,
+                                a: ({node, ...props}) => <Link color='blue.600' fontWeight="bold" isExternal {...props} />,
+                                ul: ({node, ...props}) => <Stack as="ul" spacing={2} mt={2} {...props} />,
+                                li: ({node, ...props}) => <Box as="li" ml={4} listStyleType="none" {...props} />,
+                            }}
+                        />
+                    </CardBody>
+                </Card>
+            ))}
+
+            {summaryPart && (
+                 <Card variant="outline" size="sm" bg="blue.50">
+                    <CardBody>
+                        <ReactMarkdown
+                            children={summaryPart}
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                                p: ({node, ...props}) => <Text {...props} />,
+                            }}
+                        />
+                    </CardBody>
+                </Card>
+            )}
+        </VStack>
+    );
+  };
+
 
   return (
-    <Container maxW="container.lg" mt={8}>
-      <VStack spacing={6}>
-        <Box w="full">
-          <Heading as="h1" size="xl" textAlign="center" mb={4}>
-            Flight Query
+    <Box bg="gray.50" minH="100vh">
+      <VStack spacing={4} align="stretch" p={3} pb={8}>
+        
+        <Box textAlign="center" pt={2}>
+          <Heading as="h1" size="lg" color="gray.700">
+            Flight Search AI
           </Heading>
-          <Text textAlign="center" color="gray.500">
-            Ask about the cheapest flights from one city to another
-          </Text>
         </Box>
 
-        <Box w="full" bg="white" p={6} boxShadow="md" borderRadius="md">
-          <Input
-            as="textarea"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Ask about flights"
-            size="lg"
-            mb={2}
-            variant="filled"
-            resize="none"
-            rows={2}
-            overflow="hidden"
-            whiteSpace="pre-wrap"
-            style={{ height: "auto" }}
-          />
-          <Button
-            isLoading={loading}
-            loadingText="Searching"
-            colorScheme="blue"
-            onClick={() => handleSubmit()}
-            w="full"
-          >
-            Submit
-          </Button>
+        <Box position="sticky" top={3} zIndex={10}>
+          <Card shadow="md">
+            <CardBody p={2}>
+              <Flex>
+                <Input
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="e.g., 'Delhi to Hanoi'"
+                  size="lg"
+                  variant="filled"
+                  borderRightRadius="none"
+                  onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+                />
+                <IconButton
+                  aria-label="Search flights"
+                  icon={<SearchIcon />}
+                  colorScheme="blue"
+                  size="lg"
+                  borderLeftRadius="none"
+                  onClick={() => handleSubmit()}
+                  isLoading={loading}
+                />
+              </Flex>
+            </CardBody>
+          </Card>
         </Box>
-
-        {(answer || loading) && (
-          <Box w="full" p={6} bg="white" boxShadow="md" borderRadius="md">
-            <Heading as="h3" size="md" mb={4}>
-              Answer:
-            </Heading>
-            <Box
-              ref={answerRef}
-              className="markdown-body"
-              css={{
-                '& table': {
-                  width: '100%', // Table will occupy full width of container
-                  borderCollapse: 'collapse',
-                  marginBottom: '1rem',
-                },
-                '& th, & td': {
-                  border: '1px solid #ddd',
-                  padding: '8px',
-                  textAlign: 'left',
-                  whiteSpace: 'nowrap', // Prevents text from wrapping inside cells
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis', // Adds ellipsis if content is too long
-                },
-                '& th': {
-                  backgroundColor: '#f5f5f5',
-                },
-                '& h3': {
-                  marginTop: '1rem',
-                  marginBottom: '0.5rem',
-                },
-                '& p': {
-                  marginBottom: '1rem',
-                  lineHeight: '1.5',
-                },
-              }}
-            >
-              <ReactMarkdown
-                children={answer || "Generating response..."}
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  table: ({ node, ...props }) => (
-                    <div style={{ overflowX: 'auto', width: '100%' }}>
-                      <table {...props} />
-                    </div>
-                  ),
-                }}
-              />
-            </Box>
-          </Box>
-        )}
-
-        {(sqlQuery || streamingSql) && (
-          <Box
-            w="full"
-            p={6}
-            bg="white"
-            boxShadow="md"
-            borderRadius="md"
-            ref={sqlRef}
-          >
-            <Heading as="h3" size="md" mb={4}>
-              SQL Query:
-              {streamingSql && (
-                <Text as="span" fontSize="sm" color="gray.500" ml={2}>
-                  (Generating...)
-                </Text>
-              )}
-            </Heading>
-            <Box overflowX="auto">
-              <SyntaxHighlighter
-                language="sql"
-                style={atomDark}
-                wrapLines={true}
-                wrapLongLines={true}
-              >
-                {sqlQuery || ""}
-              </SyntaxHighlighter>
-            </Box>
-          </Box>
-        )}
-
-        <Box w="full" bg="white" p={6} boxShadow="md" borderRadius="md">
-          <Heading as="h3" size="md" mb={4}>
-            Predefined Prompts:
-          </Heading>
-          <Stack spacing={3}>
-            {prompts.map((prompt, index) => (
-              <Button
-                key={index}
-                colorScheme="teal"
-                variant="outline"
-                w="full"
-                textAlign="left"
-                whiteSpace="normal"
-                wordBreak="break-word"
-                onClick={() => {
-                  setQuestion(prompt);
-                  handleSubmit(prompt);
-                }}
-              >
-                {prompt}
-              </Button>
+        
+        <Wrap spacing={2}>
+            {prompts.map((prompt) => (
+                <WrapItem key={prompt}>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        colorScheme="gray"
+                        fontWeight="normal"
+                        onClick={() => {
+                            setQuestion(prompt);
+                            handleSubmit(prompt);
+                        }}
+                    >
+                        {prompt}
+                    </Button>
+                </WrapItem>
             ))}
-          </Stack>
+        </Wrap>
+
+        <Box ref={resultsContainerRef}>
+            {renderResponse()}
         </Box>
+        
+        {sqlQuery && (
+          <Box>
+            <Heading as="h3" size="sm" my={3} color="gray.600">
+              Generated SQL Query
+            </Heading>
+            <Card>
+              <CardBody p={0}>
+                <Box bg="gray.800" p={3} borderRadius="md" overflowX="auto">
+                  <SyntaxHighlighter language="sql" style={atomDark} customStyle={{fontSize: '0.8em', background: 'transparent'}}>
+                    {sqlQuery}
+                  </SyntaxHighlighter>
+                </Box>
+              </CardBody>
+            </Card>
+          </Box>
+        )}
       </VStack>
-    </Container>
+    </Box>
   );
 };
 
